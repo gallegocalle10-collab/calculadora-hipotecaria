@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calcula tu hipoteca</title>
+<style>
+  :root {
+    --bg:#f4f8f7; --card:#ffffff; --soft:#eef5f3; --text:#2b3a38; --muted:#6c7d7a; --line:#e1ebe8;
+    --accent:#3a9188; --accent-soft:#e3f2ef; --red:#c8453f; --red-soft:#fdeeed; --red-line:#f3c7c4;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:980px; margin:0 auto; padding:32px 16px 56px; }
+  header { text-align:center; margin-bottom:28px; }
+  h1 { font-size:28px; font-weight:650; margin:0 0 6px; }
+  .sub { color:var(--muted); margin:0 auto; max-width:580px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:start; }
+  @media (max-width:880px){ .grid { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:0 2px 10px rgba(58,145,136,.06); }
+  h2 { font-size:16px; font-weight:650; margin:0 0 10px; }
+  h2 .step { display:inline-grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:13px; margin-right:8px; }
+  h3 { font-size:13px; font-weight:650; color:var(--accent); margin:16px 0 0; text-transform:uppercase; letter-spacing:.04em; }
+  .lbl { display:block; margin:12px 0 0; font-size:14px; }
+  .lbl small { display:block; color:var(--muted); font-size:12px; margin-top:1px; }
+  .in { position:relative; margin-top:5px; }
+  .in input, select { width:100%; padding:9px 34px 9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--soft); color:var(--text); font:inherit; text-align:right; }
+  select { text-align:left; padding-right:12px; margin-top:5px; cursor:pointer; }
+  .in::after { content:attr(data-u); position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:13px; pointer-events:none; }
+  .in.wide input { padding-right:46px; }
+  .in input:focus, select:focus { outline:none; border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-soft); }
+  .row2 { display:grid; grid-template-columns:1.4fr 1fr; gap:8px; }
+  .check { display:flex; gap:8px; align-items:center; margin-top:8px; font-size:13px; color:var(--muted); }
+  .seg { display:grid; gap:6px; margin-top:6px; background:var(--soft); padding:4px; border-radius:12px; }
+  .seg.c2 { grid-template-columns:1fr 1fr; } .seg.c4 { grid-template-columns:repeat(4,1fr); }
+  .seg input { position:absolute; opacity:0; pointer-events:none; }
+  .seg label { text-align:center; padding:8px 6px; border-radius:9px; cursor:pointer; font-size:14px; color:var(--muted); }
+  .seg input:checked + label { background:#fff; color:var(--accent); font-weight:600; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .anual { font-size:12px; color:var(--muted); text-align:right; margin-top:4px; }
+  .note { margin-top:12px; padding:9px 11px; background:var(--accent-soft); border-radius:10px; font-size:12.5px; color:#2f6f68; }
+  .results { margin-top:16px; }
+  .card.bad { border-color:var(--red-line); }
+  .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:880px){ .kpis { grid-template-columns:1fr; } }
+  .kpi { background:var(--soft); border-radius:12px; padding:14px 16px; }
+  .kpi.main { background:var(--accent-soft); }
+  .kpi .l { color:var(--muted); font-size:13px; }
+  .kpi .v { font-size:28px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .kpi.main .v { color:var(--accent); }
+  .kpi .n { color:var(--muted); font-size:12px; }
+  .kpi.red { background:var(--red-soft); }
+  .kpi.red .v, .kpi.red .l { color:var(--red); }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:6px; align-items:start; }
+  @media (max-width:880px){ .cols { grid-template-columns:1fr; gap:0; } }
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-variant-numeric:tabular-nums; font-size:14px; }
+  td { padding:7px 0; border-bottom:1px solid var(--line); }
+  td:last-child { text-align:right; font-weight:600; white-space:nowrap; }
+  tr.total td { border-bottom:none; font-weight:700; font-size:15px; padding-top:9px; }
+  td.red { color:var(--red); }
+  .msg { margin-top:14px; padding:10px 12px; border-radius:10px; font-size:13.5px; }
+  .msg.ok { background:var(--accent-soft); color:#2f6f68; }
+  .msg.bad { background:var(--red-soft); color:var(--red); }
+  .legal { color:var(--muted); font-size:12px; text-align:center; margin:24px auto 0; max-width:720px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Calcula tu hipoteca</h1>
+    <p class="sub">Descubre qué cuota podrías asumir, qué vivienda podrías comprar y cuánto necesitarías ahorrar. Tus datos no se guardan ni se envían a ningún sitio.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2><span class="step">1</span>Tus ingresos</h2>
+      <span class="lbl">¿Cuántas personas solicitáis la hipoteca?</span>
+      <div class="seg c4" id="numSol">
+        <input type="radio" name="sol" id="s1" value="1" checked><label for="s1">1</label>
+        <input type="radio" name="sol" id="s2" value="2"><label for="s2">2</label>
+        <input type="radio" name="sol" id="s3" value="3"><label for="s3">3</label>
+        <input type="radio" name="sol" id="s4" value="4"><label for="s4">4</label>
+      </div>
+      <div id="solicitantes"></div>
+
+      <h3>Otros ingresos</h3>
+      <label class="lbl">Rentas al mes<small>Alquileres que cobráis, pensiones…</small>
+        <div class="in" data-u="€"><input id="rentas" type="number" min="0" step="50" value="0"></div></label>
+      <div class="note">De las rentas se tiene en cuenta el 70 %, que es el valor medio que aplica el sector bancario.</div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span>Tus gastos al mes</h2>
+      <label class="lbl">Alquiler actual
+        <div class="in" data-u="€"><input id="alquiler" type="number" min="0" step="50" value="0"></div></label>
+      <label class="check"><input id="alqSigue" type="checkbox"> Lo seguiré pagando después de comprar</label>
+      <label class="lbl">Cuotas de préstamos<small>Coche, consumo, otra hipoteca…</small>
+        <div class="in" data-u="€"><input id="prestamos" type="number" min="0" step="10" value="0"></div></label>
+      <label class="lbl">Otros gastos financieros<small>Tarjetas aplazadas, leasing, renting…</small>
+        <div class="in" data-u="€"><input id="otros" type="number" min="0" step="10" value="0"></div></label>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span>La hipoteca</h2>
+      <span class="lbl">Tipo de vivienda</span>
+      <div class="seg c2">
+        <input type="radio" name="tipoViv" id="usada" value="usada" checked><label for="usada">Segunda mano</label>
+        <input type="radio" name="tipoViv" id="nueva" value="nueva"><label for="nueva">Obra nueva</label>
+      </div>
+      <label class="lbl">Tipo de interés anual<small>Media del sector: 3,01 % (INE, julio 2026)</small>
+        <div class="in" data-u="%"><input id="tipo" type="number" min="0" max="15" step="0.05" value="3.01"></div></label>
+      <label class="lbl">Plazo
+        <div class="in wide" data-u="años"><input id="plazo" type="number" min="5" max="40" step="1" value="30"></div></label>
+      <label class="lbl">Edad del solicitante de más edad<small>La hipoteca termina como máximo a los 75 años</small>
+        <div class="in wide" data-u="años"><input id="edad" type="number" min="18" max="75" step="1" value="35"></div></label>
+    </section>
+  </div>
+
+  <section class="card results" id="cardRes">
+    <h2>Tu resultado</h2>
+    <div class="kpis">
+      <div class="kpi main" id="kCuota"><div class="l">Cuota mensual máxima</div><div class="v" id="rCuota">—</div><div class="n" id="rCuotaN"></div></div>
+      <div class="kpi" id="kHip"><div class="l">Hipoteca máxima</div><div class="v" id="rHip">—</div><div class="n">80 % del precio de la vivienda</div></div>
+      <div class="kpi" id="kPrecio"><div class="l">Precio máximo de vivienda</div><div class="v" id="rPrecio">—</div><div class="n" id="rPrecioN"></div></div>
+    </div>
+    <div class="cols">
+      <table>
+        <tr><td>Ingresos que se tienen en cuenta (al mes)</td><td id="tIng"></td></tr>
+        <tr><td>Gastos que se mantienen (al mes)</td><td id="tDeu"></td></tr>
+        <tr><td>Endeudamiento actual, sin hipoteca</td><td id="tRatAct"></td></tr>
+        <tr><td>Endeudamiento con la hipoteca</td><td id="tRatFin"></td></tr>
+        <tr><td>Plazo aplicado</td><td id="tPlazo"></td></tr>
+      </table>
+      <table>
+        <tr><td>Entrada (20 % del precio)</td><td id="tEntrada"></td></tr>
+        <tr><td id="tImpL"></td><td id="tImp"></td></tr>
+        <tr class="total"><td>Fondos propios que necesitas aportar</td><td id="tFondos"></td></tr>
+      </table>
+    </div>
+    <div class="note" id="notaImp"></div>
+    <div id="msg"></div>
+  </section>
+
+  <p class="legal">Simulación orientativa con valores medios del mercado: 80 % de financiación, 70 % de rentas computables y 40 % de endeudamiento máximo. No es una oferta vinculante. La concesión y las condiciones finales dependen del estudio de cada entidad. No incluye notaría, registro, gestoría ni tasación.</p>
+</main>
+
+<script>
+const RENTAS = 0.70, LTV = 0.80, MAX_RATIO = 0.40;
+const IMP = { usada:{ pct:0.10, label:"ITP (10 %)" }, nueva:{ pct:0.12, label:"IVA y AJD (12 %)" } };
+const eur = n => n.toLocaleString("es-ES",{style:"currency",currency:"EUR",minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:"always"});
+const pct = n => isFinite(n) ? (n*100).toFixed(1).replace(".", ",") + " %" : "—";
+const $ = id => document.getElementById(id);
+const num = el => Math.max(0, parseFloat((typeof el === "string" ? $(el) : el).value) || 0);
+const set = (id, t) => $(id).textContent = t;
+const capitalDe = (c, i, n) => n === 0 ? 0 : (i === 0 ? c * n : c * (1 - Math.pow(1 + i, -n)) / i);
+
+// Datos de cada solicitante (se conservan al cambiar el número)
+const datos = [{ sal: 1800, pagas: 14 }, { sal: 0, pagas: 14 }, { sal: 0, pagas: 14 }, { sal: 0, pagas: 14 }];
+
+function pintarSolicitantes() {
+  const n = +document.querySelector("input[name=sol]:checked").value;
+  const cont = $("solicitantes");
+  cont.innerHTML = "";
+  for (let k = 0; k < n; k++) {
+    const d = datos[k];
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <h3>Solicitante ${k + 1}</h3>
+      <div class="row2">
+        <label class="lbl">Salario neto al mes
+          <div class="in" data-u="€"><input type="number" min="0" step="50" value="${d.sal}" data-k="${k}" data-f="sal"></div></label>
+        <label class="lbl">Pagas al año
+          <select data-k="${k}" data-f="pagas">
+            ${[12, 14, 15, 16].map(p => `<option value="${p}" ${p === d.pagas ? "selected" : ""}>${p} pagas</option>`).join("")}
+          </select></label>
+      </div>
+      <div class="anual" id="anual${k}"></div>`;
+    cont.appendChild(div);
+  }
+  cont.querySelectorAll("input, select").forEach(el => {
+    const upd = () => { datos[el.dataset.k][el.dataset.f] = num(el); calc(); };
+    el.addEventListener("input", upd); el.addEventListener("change", upd);
+  });
+  calc();
+}
+
+function calc() {
+  const nSol = +document.querySelector("input[name=sol]:checked").value;
+  let anualNominas = 0;
+  for (let k = 0; k < nSol; k++) {
+    const anual = datos[k].sal * datos[k].pagas;
+    anualNominas += anual;
+    const el = $("anual" + k);
+    if (el) el.textContent = "Total al año: " + eur(anual) + " · equivale a " + eur(anual / 12) + " al mes";
+  }
+  const ingresos = anualNominas / 12 + num("rentas") * RENTAS;
+  const deudas = ($("alqSigue").checked ? num("alquiler") : 0) + num("prestamos") + num("otros");
+  const edad = num("edad");
+  const plazo = Math.max(0, Math.min(num("plazo"), edad > 0 ? 75 - edad : 40));
+  const n = plazo * 12, i = num("tipo") / 100 / 12;
+  const tipoViv = document.querySelector("input[name=tipoViv]:checked").value;
+  const imp = IMP[tipoViv];
+
+  const margen = ingresos * MAX_RATIO - deudas;
+  const cuota = Math.max(0, margen);
+  const hip = capitalDe(cuota, i, n);
+  const precio = hip / LTV;
+  const ratioAct = ingresos > 0 ? deudas / ingresos : (deudas > 0 ? Infinity : 0);
+  const ratioFin = ingresos > 0 ? (deudas + cuota) / ingresos : ratioAct;
+  const sinMargen = ingresos > 0 && margen <= 0;
+
+  set("rCuota", eur(cuota));
+  set("rCuotaN", num("tipo").toLocaleString("es-ES") + " % · " + plazo + " años");
+  set("rHip", eur(hip));
+  set("rPrecio", eur(precio));
+  set("rPrecioN", tipoViv === "usada" ? "Vivienda de segunda mano" : "Vivienda de obra nueva");
+  set("tIng", eur(ingresos));
+  set("tDeu", eur(deudas));
+  set("tRatAct", pct(ratioAct));
+  set("tRatFin", pct(ratioFin));
+  set("tPlazo", plazo + " años" + (plazo < num("plazo") ? " (limitado por la edad)" : ""));
+  set("tEntrada", eur(precio * (1 - LTV)));
+  set("tImpL", imp.label);
+  set("tImp", eur(precio * imp.pct));
+  set("tFondos", eur(precio * ((1 - LTV) + imp.pct)));
+
+  ["kCuota", "kHip", "kPrecio"].forEach(k => $(k).classList.toggle("red", sinMargen));
+  $("tRatAct").classList.toggle("red", ratioAct > MAX_RATIO);
+  $("tRatFin").classList.toggle("red", ratioFin > MAX_RATIO);
+  $("cardRes").classList.toggle("bad", sinMargen);
+
+  $("notaImp").textContent = tipoViv === "usada"
+    ? "El ITP puede estar bonificado según los ingresos y la edad del comprador. En ese caso, los fondos propios necesarios serían menores."
+    : "En obra nueva se paga IVA (10 %) más el impuesto de actos jurídicos documentados. Puede haber bonificaciones según los ingresos y la edad del comprador.";
+
+  const m = $("msg");
+  if (ingresos === 0) { m.className = "msg bad"; m.textContent = "Introduce el salario de cada solicitante para calcular."; }
+  else if (sinMargen) { m.className = "msg bad"; m.textContent = "Tus gastos actuales ya suponen un " + pct(ratioAct) + " de tus ingresos y superan el 40 % máximo. Te faltan " + eur(-margen) + " al mes de margen antes de poder asumir una hipoteca."; }
+  else if (plazo <= 0) { m.className = "msg bad"; m.textContent = "Con esta edad no queda plazo disponible hasta los 75 años."; }
+  else { m.className = "msg ok"; m.textContent = "Con tus datos podrías optar a una vivienda de hasta " + eur(precio) + ", aportando " + eur(precio * ((1 - LTV) + imp.pct)) + " de ahorro propio."; }
+}
+
+document.querySelectorAll("input[name=sol]").forEach(el => el.addEventListener("change", pintarSolicitantes));
+document.querySelectorAll("#rentas, #alquiler, #prestamos, #otros, #tipo, #plazo, #edad").forEach(el => el.addEventListener("input", calc));
+document.querySelectorAll("input[name=tipoViv], #alqSigue").forEach(el => el.addEventListener("change", calc));
+pintarSolicitantes();
+</script>
+</body>
+</html>
